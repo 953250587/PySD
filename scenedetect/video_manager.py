@@ -239,13 +239,15 @@ def open_captures(video_files, framerate=None, validate_parameters=True):
             raise VideoOpenFailure(closed_caps)
 
         cap_framerates = [cap.get(cv2.CAP_PROP_FPS) for cap in cap_list]
+        # print('cap_framerates:', cap_framerates)
         cap_framerate, check_framerate = validate_capture_framerate(
-            video_names, cap_framerates, framerate)
+            video_names, cap_framerates, framerate)  # 未给定FPS的时候会需要检查FPS,check_framerate=True
         # Store frame sizes as integers (VideoCapture.get() returns float).
         cap_frame_sizes = [(math.trunc(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
                             math.trunc(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
                            for cap in cap_list]
-        cap_frame_size = cap_frame_sizes[0]
+        # print('cap_frame_sizes:', cap_frame_sizes)
+        cap_frame_size = cap_frame_sizes[0]   # 选择第一个size
 
         # If we need to validate the parameters, we check that the FPS and width/height
         # of all open captures is identical (or almost identical in the case of FPS).
@@ -330,6 +332,7 @@ def validate_capture_parameters(video_names, cap_frame_sizes, check_framerate=Fa
         bad_params += [(cv2.CAP_PROP_FPS, fps, cap_framerates[0], video_names[i][0],
                         video_names[i][1]) for i, fps in enumerate(cap_framerates)
                        if math.fabs(fps - cap_framerates[0]) > max_framerate_delta]
+    # print('bad params:', bad_params)
 
     if bad_params:
         raise VideoParameterMismatch(bad_params)
@@ -369,6 +372,7 @@ class VideoManager(object):
         # These VideoCaptures are only open in this process.
         self._cap_list, self._cap_framerate, self._cap_framesize = open_captures(
             video_files=video_files, framerate=framerate)
+        # print('cap_list:', self._cap_list)
         self._end_of_video = False
         self._start_time = self.get_base_timecode()
         self._end_time = None
@@ -575,6 +579,7 @@ class VideoManager(object):
         self._started = True
         self._get_next_cap()
         self.seek(self._start_time)
+        # print('cur idx', self._curr_cap_idx)
 
 
     def seek(self, timecode):
@@ -743,12 +748,15 @@ class VideoManager(object):
         if self._curr_cap is not None and self._end_of_video != True:
             while not read_frame:
                 read_frame, self._last_frame = self._curr_cap.read()
-                if not read_frame and not self._get_next_cap():
+                # cv2.imshow("demo1", self._last_frame)
+                # cv2.waitKey(0)
+                # print(read_frame)
+                if not read_frame and not self._get_next_cap():  # 无法继续读取停止
                     break
-                if self._downscale_factor > 1:
+                if self._downscale_factor > 1 and self._last_frame is not None:  # 修改了判断self._last_frame是否未空
                     self._last_frame = self._last_frame[
                         ::self._downscale_factor, ::self._downscale_factor, :]
-        if self._end_time is not None and self._curr_time > self._end_time:
+        if self._end_time is not None and self._curr_time > self._end_time:  # 超过设定的长度后返回空
             read_frame = False
             self._last_frame = None
         if read_frame:
@@ -762,6 +770,7 @@ class VideoManager(object):
         if self._curr_cap_idx is None:
             self._curr_cap_idx = 0
             self._curr_cap = self._cap_list[0]
+            # print('cur idx:', self._curr_cap_idx)
             return True
         else:
             if not (self._curr_cap_idx + 1) < len(self._cap_list):
@@ -769,5 +778,6 @@ class VideoManager(object):
                 return False
             self._curr_cap_idx += 1
             self._curr_cap = self._cap_list[self._curr_cap_idx]
+            # print('cur idx:', self._curr_cap_idx)
             return True
 

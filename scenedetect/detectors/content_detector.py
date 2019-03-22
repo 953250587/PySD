@@ -50,7 +50,7 @@ class ContentDetector(SceneDetector):
     def __init__(self, threshold=30.0, min_scene_len=15):
         super(ContentDetector, self).__init__()
         self.threshold = threshold
-        self.min_scene_len = min_scene_len  # minimum length of any given scene, in frames
+        self.min_scene_len = min_scene_len  # minimum length of any given scene, in frames 最小的连续长度
         self.last_frame = None
         self.last_scene_cut = None
         self.last_hsv = None
@@ -82,7 +82,7 @@ class ContentDetector(SceneDetector):
             # Change in average of HSV (hsv), (h)ue only, (s)aturation only, (l)uminance only.
             delta_hsv_avg, delta_h, delta_s, delta_v = 0.0, 0.0, 0.0, 0.0
 
-            if (self.stats_manager is not None and
+            if (self.stats_manager is not None and   # 如果存在则直接读取
                     self.stats_manager.metrics_exist(frame_num, metric_keys)):
                 delta_hsv_avg, delta_h, delta_s, delta_v = self.stats_manager.get_metrics(
                     frame_num, metric_keys)

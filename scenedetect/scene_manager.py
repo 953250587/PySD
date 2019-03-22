@@ -100,7 +100,9 @@ def get_scenes_from_cuts(cut_list, base_timecode, num_frames, start_frame=0):
         scene_list.append((last_cut, cut))
         last_cut = cut
     # Last scene is from last cut to end of video.
-    scene_list.append((last_cut, base_timecode + num_frames))
+    # scene_list.append((last_cut, base_timecode + num_frames))
+    # 修改结束位置,考虑加上开始位置
+    scene_list.append((last_cut, base_timecode + start_frame + num_frames))
 
     return scene_list
 
@@ -220,6 +222,9 @@ class SceneManager(object):
             end_time are FrameTimecode objects representing the exact time/frame where each
             detected scene in the video begins and ends.
         """
+        # print('self.get_cut_list(base_timecode):', self.get_cut_list(base_timecode))
+        # print('self._num_frames:', self._num_frames)
+        # print('self._start_frame:', self._start_frame)
         return get_scenes_from_cuts(
             self.get_cut_list(base_timecode), base_timecode,
             self._num_frames, self._start_frame)
@@ -326,6 +331,7 @@ class SceneManager(object):
         end_frame = None
 
         total_frames = math.trunc(frame_source.get(cv2.CAP_PROP_FRAME_COUNT))
+        # print('total frames:', total_frames)
 
         start_time = frame_source.get(cv2.CAP_PROP_POS_FRAMES)
         if isinstance(start_time, FrameTimecode):
@@ -344,11 +350,13 @@ class SceneManager(object):
         if end_frame is not None:
             total_frames = end_frame
 
-        if start_frame is not None and not isinstance(start_time, FrameTimecode):
+        # 排除掉开始位置
+        if start_frame is not None:  #and not isinstance(start_time, FrameTimecode):
             total_frames -= start_frame
 
         if total_frames < 0:
             total_frames = 0
+        # print('total frames:', total_frames)
 
         progress_bar = None
         if tqdm and show_progress:
@@ -395,6 +403,8 @@ class SceneManager(object):
 
             if progress_bar:
                 progress_bar.close()
+
+        # print('self._num_frames:', self._num_frames)
 
         return num_frames
 
